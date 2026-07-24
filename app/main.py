@@ -1,7 +1,8 @@
 from fastapi import FastAPI
+from app.config import settings
 from app.routers import destinations
 
-app = FastAPI(title="Travel API")
+app = FastAPI(title=settings.app_name)
 
 app.include_router(destinations.router)
 

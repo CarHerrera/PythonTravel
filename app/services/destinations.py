@@ -1,9 +1,15 @@
+import json
+from pathlib import Path
 from app.schemas.destination import Destination
 
-_DESTINATIONS = [
-    Destination(name="Aruba", country="Aruba"),
-    Destination(name="Belize City", country="Belize"),
-]
+DATA_FILE = Path(__file__).parent.parent / "data" / "resorts.json"
+
+def _load() -> list[Destination]:
+    with open(DATA_FILE) as f:
+        raw = json.load(f)
+    return [Destination(**item) for item in raw]
+
+_DESTINATIONS = _load()
 
 def get_all() -> list[Destination]:
     return _DESTINATIONS
