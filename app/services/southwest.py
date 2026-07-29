@@ -10,6 +10,7 @@ def _normalize(raw: dict) -> dict:
     """Scraped rows can have null amenities/room_types when a hotel's detail
     or room-options fetch didn't fully capture — treat missing as empty."""
     raw["amenities"] = raw.get("amenities") or []
+    raw["images"] = raw.get("images") or []
     raw["room_types"] = raw.get("room_types") or []
     for room_type in raw["room_types"]:
         room_type["amenities"] = room_type.get("amenities") or []

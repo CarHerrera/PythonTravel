@@ -25,4 +25,5 @@ class SouthwestHotel(BaseModel):
     description: Optional[str] = None
     star_rating: Optional[float] = None
     amenities: list[str] = []
+    images: list[str] = []
     room_types: list[SouthwestRoomType] = []
