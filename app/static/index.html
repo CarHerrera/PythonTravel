@@ -13,6 +13,8 @@
     --border: #e1e5ea;
     --accent: #0a5c8a;
     --muted: #667085;
+    --cheaper: #1a7f37;
+    --pricier: #b91c1c;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -22,6 +24,8 @@
       --border: #2d333a;
       --accent: #6fc0ee;
       --muted: #9aa4af;
+      --cheaper: #4ade80;
+      --pricier: #f87171;
     }
   }
   * { box-sizing: border-box; }
@@ -62,22 +66,49 @@
   summary .hotel-name { flex: 1; }
   summary .hotel-meta { color: var(--muted); font-size: 0.85rem; font-weight: 400; white-space: nowrap; }
   .hotel-body { padding: 0 1.25rem 1.25rem; }
-  .carousel {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    gap: 0.5rem;
+  .slideshow-viewport {
+    position: relative;
     margin-bottom: 1rem;
     border-radius: 8px;
-  }
-  .carousel img {
-    scroll-snap-align: start;
-    flex: 0 0 100%;
-    max-height: 320px;
-    width: 100%;
-    object-fit: cover;
-    border-radius: 8px;
+    overflow: hidden;
     background: var(--border);
+  }
+  .slideshow-img {
+    display: block;
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    cursor: zoom-in;
+  }
+  .slideshow-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    font-size: 1.3rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .slideshow-nav:hover { background: rgba(0, 0, 0, 0.65); }
+  .slideshow-nav.prev { left: 0.6rem; }
+  .slideshow-nav.next { right: 0.6rem; }
+  .slideshow-counter {
+    position: absolute;
+    bottom: 0.6rem;
+    right: 0.6rem;
+    background: rgba(0, 0, 0, 0.55);
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
   }
   .carousel.empty {
     display: flex;
@@ -86,7 +117,59 @@
     height: 120px;
     color: var(--muted);
     border: 1px dashed var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
   }
+  .lightbox {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+  }
+  .lightbox[hidden] { display: none; }
+  .lightbox-img-wrap { position: relative; flex: 1; display: flex; align-items: center; justify-content: center; min-height: 0; width: 100%; }
+  .lightbox-img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 4px; }
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+  }
+  .lightbox-close:hover { background: rgba(255, 255, 255, 0.3); }
+  .lightbox .slideshow-nav { width: 3rem; height: 3rem; font-size: 1.7rem; }
+  .lightbox-thumbs {
+    display: flex;
+    gap: 0.5rem;
+    overflow-x: auto;
+    margin-top: 1rem;
+    max-width: 100%;
+    padding: 0.25rem;
+  }
+  .lightbox-thumb {
+    flex: 0 0 auto;
+    width: 70px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.55;
+    border: 2px solid transparent;
+  }
+  .lightbox-thumb.active { opacity: 1; border-color: var(--accent); }
+  .lightbox-thumb:hover { opacity: 0.85; }
   .description { line-height: 1.5; white-space: pre-line; margin-bottom: 1rem; }
   .amenities { display: flex; flex-wrap: wrap; gap: 0.4rem; }
   .amenity-pill {
@@ -98,55 +181,404 @@
     color: var(--muted);
   }
   .loading, .error { text-align: center; color: var(--muted); margin-top: 3rem; }
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem 1.5rem;
+    margin: 0 0 2rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .controls label { display: flex; align-items: center; gap: 0.4rem; cursor: pointer; white-space: nowrap; }
+  .controls select, .controls input[type="number"] {
+    font: inherit;
+    color: inherit;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.5rem;
+  }
+  .controls input[type="number"] { width: 6rem; }
+  .chain-rates { margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+  .chain-rate-line { margin: 0 0 0.4rem; font-size: 0.9rem; color: var(--accent); font-weight: 600; }
+  .chain-rooms { margin-bottom: 0.5rem; }
+  .chain-rooms summary { cursor: pointer; color: var(--muted); font-size: 0.85rem; }
+  .chain-room { padding: 0.4rem 0 0.4rem 0.75rem; border-left: 2px solid var(--border); margin: 0.4rem 0; }
+  .chain-room-title { margin: 0 0 0.25rem; font-weight: 600; font-size: 0.9rem; }
+  .rate-option { margin: 0 0 0.15rem; font-size: 0.85rem; color: var(--muted); }
+  .chain-room-images {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 0.4rem;
+    margin: 0.4rem 0;
+  }
+  .chain-room-images img {
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+    height: 90px;
+    width: 130px;
+    object-fit: cover;
+    border-radius: 6px;
+    background: var(--border);
+    cursor: pointer;
+  }
+  .price-stated {
+    margin: 0.4rem 0 0.9rem;
+    padding: 0.6rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .price-row { margin: 0 0 0.3rem; font-size: 0.95rem; }
+  .price-row:last-of-type { margin-bottom: 0; }
+  .price-row .price-tag { color: var(--muted); }
+  .price-row .price-tag a { color: inherit; }
+  .price-row .price-value { font-weight: 700; }
+  .price-row.winner .price-value { color: var(--cheaper); }
+  .price-delta-line { font-weight: 700; margin: 0.5rem 0 0; }
+  .price-delta-line.cheaper { color: var(--cheaper); }
+  .price-delta-line.pricier { color: var(--pricier); }
+  .flight-note { font-size: 0.8rem; color: var(--muted); margin: 0.3rem 0 0; }
 </style>
 </head>
 <body>
   <h1>Southwest Vacations</h1>
   <p class="subtitle" id="subtitle">Loading hotels…</p>
+  <div class="controls" id="controls" hidden>
+    <label id="only-comparisons-label" hidden>
+      <input type="checkbox" id="only-comparisons" />
+      Only show hotels with a live rate comparison
+    </label>
+    <label>
+      Sort by
+      <select id="sort-by">
+        <option value="default">Default</option>
+        <option value="price-asc">Price: low to high</option>
+        <option value="price-desc">Price: high to low</option>
+        <option value="rating-desc">Rating: high to low</option>
+        <option value="rating-asc">Rating: low to high</option>
+      </select>
+    </label>
+    <label>
+      Min rating
+      <select id="min-rating">
+        <option value="0">Any</option>
+        <option value="3">3+</option>
+        <option value="3.5">3.5+</option>
+        <option value="4">4+</option>
+        <option value="4.5">4.5+</option>
+      </select>
+    </label>
+    <label>
+      Max price
+      <input type="number" id="max-price" placeholder="$ any" min="0" step="50" />
+    </label>
+  </div>
   <div id="root"></div>
+  <div class="lightbox" id="lightbox" hidden>
+    <button class="lightbox-close" id="lightbox-close" type="button" aria-label="Close">&times;</button>
+    <div class="lightbox-img-wrap">
+      <button class="slideshow-nav prev" id="lightbox-prev" type="button" aria-label="Previous image">&lsaquo;</button>
+      <img class="lightbox-img" id="lightbox-img" src="" alt="" />
+      <button class="slideshow-nav next" id="lightbox-next" type="button" aria-label="Next image">&rsaquo;</button>
+    </div>
+    <div class="lightbox-thumbs" id="lightbox-thumbs"></div>
+  </div>
 
 <script>
 const fmtAmenity = (a) => a.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, c => c.toUpperCase());
+
+// One shared lightbox for the whole page (main hotel gallery + every room's
+// own image strip) rather than a separate modal per gallery — only one can
+// ever be open at a time anyway.
+let lightboxImages = [];
+let lightboxIndex = 0;
+let lightboxAlt = '';
+
+function renderLightbox() {
+  const img = document.getElementById('lightbox-img');
+  img.src = lightboxImages[lightboxIndex];
+  img.alt = lightboxAlt;
+
+  const thumbs = document.getElementById('lightbox-thumbs');
+  thumbs.innerHTML = '';
+  lightboxImages.forEach((src, i) => {
+    const t = document.createElement('img');
+    t.src = src;
+    t.className = 'lightbox-thumb' + (i === lightboxIndex ? ' active' : '');
+    t.alt = `${lightboxAlt} thumbnail ${i + 1}`;
+    t.loading = 'lazy';
+    t.addEventListener('click', () => { lightboxIndex = i; renderLightbox(); });
+    thumbs.appendChild(t);
+  });
+  thumbs.children[lightboxIndex]?.scrollIntoView({ inline: 'center', block: 'nearest' });
+
+  const multi = lightboxImages.length > 1;
+  document.getElementById('lightbox-prev').hidden = !multi;
+  document.getElementById('lightbox-next').hidden = !multi;
+}
+
+function openLightbox(images, startIndex, alt) {
+  lightboxImages = images;
+  lightboxIndex = startIndex;
+  lightboxAlt = alt;
+  renderLightbox();
+  document.getElementById('lightbox').hidden = false;
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox').hidden = true;
+}
+
+function lightboxNav(delta) {
+  lightboxIndex = (lightboxIndex + delta + lightboxImages.length) % lightboxImages.length;
+  renderLightbox();
+}
+
+document.getElementById('lightbox-close').addEventListener('click', closeLightbox);
+document.getElementById('lightbox-prev').addEventListener('click', () => lightboxNav(-1));
+document.getElementById('lightbox-next').addEventListener('click', () => lightboxNav(1));
+// Clicking the dark backdrop closes it; clicking the image/thumbs/buttons
+// themselves shouldn't (event target check, not stopPropagation on every
+// inner element, since the backdrop IS the .lightbox element itself).
+document.getElementById('lightbox').addEventListener('click', (e) => {
+  if (e.target.id === 'lightbox') closeLightbox();
+});
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('lightbox').hidden) return;
+  if (e.key === 'Escape') closeLightbox();
+  else if (e.key === 'ArrowLeft') lightboxNav(-1);
+  else if (e.key === 'ArrowRight') lightboxNav(1);
+});
+
+// Single-image-at-a-time slideshow (replaces the old horizontal scroll-snap
+// carousel) — prev/next arrows step through in place, clicking the current
+// image opens the shared lightbox at that same position.
+function buildSlideshow(images, altText) {
+  const viewport = document.createElement('div');
+  viewport.className = 'slideshow-viewport';
+  let index = 0;
+
+  const img = document.createElement('img');
+  img.className = 'slideshow-img';
+  img.loading = 'lazy';
+  img.alt = altText;
+  img.src = images[0];
+  img.addEventListener('click', () => openLightbox(images, index, altText));
+  viewport.appendChild(img);
+
+  if (images.length > 1) {
+    const prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'slideshow-nav prev';
+    prev.setAttribute('aria-label', 'Previous image');
+    prev.innerHTML = '&lsaquo;';
+
+    const next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'slideshow-nav next';
+    next.setAttribute('aria-label', 'Next image');
+    next.innerHTML = '&rsaquo;';
+
+    const counter = document.createElement('div');
+    counter.className = 'slideshow-counter';
+
+    const update = () => {
+      img.src = images[index];
+      counter.textContent = `${index + 1} / ${images.length}`;
+    };
+    prev.addEventListener('click', (e) => { e.stopPropagation(); index = (index - 1 + images.length) % images.length; update(); });
+    next.addEventListener('click', (e) => { e.stopPropagation(); index = (index + 1) % images.length; update(); });
+    update();
+
+    viewport.appendChild(prev);
+    viewport.appendChild(next);
+    viewport.appendChild(counter);
+  }
+
+  return viewport;
+}
+
+// Joins a chain rate back to its Southwest hotel — both sides use the same
+// key shape, built from the hotel's own destination + name.
+const hotelKey = (destination, name) => `${destination.trim()}\0${name.trim()}`;
+
+// Southwest's base_cost is a raw "$1,234.56"-style string, not a number.
+function parseCost(raw) {
+  if (!raw) return null;
+  const n = parseFloat(raw.replace(/[$,]/g, ''));
+  return Number.isFinite(n) ? n : null;
+}
+
+// Some chains' raw prices carry more decimal precision than a currency
+// display should show (e.g. Palladium's 2896.82445) — cap at 2 like a
+// normal price, instead of toLocaleString()'s default of "however many
+// decimals happen to be in the float".
+const fmtMoney = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+// Positive = the chain is cheaper than Southwest's listed price.
+function computeDelta(chainPrice, swCost) {
+  if (chainPrice == null || swCost == null) return null;
+  return swCost - chainPrice;
+}
+
+function formatDeltaText(chainPrice, swCost) {
+  const delta = computeDelta(chainPrice, swCost);
+  if (delta == null || Math.abs(delta) < 0.5) return '';
+  const abs = Math.abs(delta).toLocaleString(undefined, { maximumFractionDigits: 0 });
+  return delta > 0 ? ` (-$${abs})` : ` (+$${abs})`;
+}
+
+let allHotels = [];
+let ratesByHotelKey = {};
+let flightsByDestination = {};
+
+function hasComparison(hotel) {
+  return (ratesByHotelKey[hotelKey(hotel.destination, hotel.name)] || []).length > 0;
+}
+
+// Southwest fares aren't scraped (southwest.com/air/booking/'s own API 403s
+// with a Terms & Conditions notice against automated fare access) — they're
+// hand-entered via flight_price_entry.py, so a destination may legitimately
+// have no price yet. price_per_person is round-trip; multiplied by
+// passengers (2, matching every chain scraper's search party size) to get a
+// total comparable to a chain's listing_price.
+function flightTotalFor(destination) {
+  const flight = flightsByDestination[destination];
+  if (!flight || flight.price_per_person == null) return null;
+  return flight.price_per_person * (flight.passengers || 2);
+}
 
 async function load() {
   const root = document.getElementById('root');
   const subtitle = document.getElementById('subtitle');
   try {
-    const res = await fetch('/southwestvacations/');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const hotels = await res.json();
+    const [hotelsRes, ratesRes, flightsRes] = await Promise.all([
+      fetch('/southwestvacations/'),
+      fetch('/rates/'),
+      fetch('/flights/'),
+    ]);
+    if (!hotelsRes.ok) throw new Error(`HTTP ${hotelsRes.status}`);
+    allHotels = await hotelsRes.json();
+    // Chain rates and flight prices are supplementary — if either fetch
+    // fails, still render the core Southwest list rather than failing the
+    // whole page.
+    const rates = ratesRes.ok ? await ratesRes.json() : [];
+    const flights = flightsRes.ok ? await flightsRes.json() : [];
 
-    const byDest = {};
-    for (const h of hotels) {
-      (byDest[h.destination] ??= []).push(h);
+    ratesByHotelKey = {};
+    for (const r of rates) {
+      const key = hotelKey(r.destination, r.southwest_hotel_name);
+      (ratesByHotelKey[key] ??= []).push(r);
     }
 
-    subtitle.textContent = `${hotels.length} hotels across ${Object.keys(byDest).length} destinations`;
-
-    root.innerHTML = '';
-    for (const dest of Object.keys(byDest).sort()) {
-      const section = document.createElement('section');
-      section.className = 'destination-section';
-
-      const title = document.createElement('h2');
-      title.className = 'destination-title';
-      title.textContent = `${dest} (${byDest[dest].length})`;
-      section.appendChild(title);
-
-      for (const hotel of byDest[dest]) {
-        section.appendChild(renderHotel(hotel));
-      }
-      root.appendChild(section);
+    flightsByDestination = {};
+    for (const f of flights) {
+      flightsByDestination[f.destination] = f;
     }
+
+    // Sort/filter controls are useful on the plain Southwest list too, not
+    // just when chain rates exist — only the comparison-only checkbox
+    // specifically needs rate data to mean anything.
+    document.getElementById('controls').hidden = false;
+    document.getElementById('sort-by').addEventListener('change', render);
+    document.getElementById('min-rating').addEventListener('change', render);
+    document.getElementById('max-price').addEventListener('input', render);
+    if (rates.length) {
+      document.getElementById('only-comparisons-label').hidden = false;
+      document.getElementById('only-comparisons').addEventListener('change', render);
+    }
+
+    render();
   } catch (err) {
     subtitle.textContent = '';
     root.innerHTML = `<p class="error">Couldn't load hotels: ${err.message}</p>`;
   }
 }
 
+// sortBy is 'default' (matched-comparisons float to top, original order
+// otherwise) or '{price|rating}-{asc|desc}'. Missing values (no star_rating,
+// no parseable base_cost) always sort last regardless of direction — a
+// hotel that's merely missing data shouldn't dominate either end of the list.
+function sortHotels(hotels, sortBy) {
+  if (sortBy === 'default') {
+    // Stable sort (guaranteed by spec since ES2019) preserves original
+    // order within each of the two groups.
+    return [...hotels].sort((a, b) => hasComparison(b) - hasComparison(a));
+  }
+  const dir = sortBy.endsWith('-asc') ? 1 : -1;
+  const field = sortBy.startsWith('price') ? (h => parseCost(h.base_cost)) : (h => h.star_rating);
+  return [...hotels].sort((a, b) => {
+    const av = field(a), bv = field(b);
+    if (av == null && bv == null) return 0;
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    return (av - bv) * dir;
+  });
+}
+
+function render() {
+  const root = document.getElementById('root');
+  const subtitle = document.getElementById('subtitle');
+  const onlyComparisons = document.getElementById('only-comparisons').checked;
+  const sortBy = document.getElementById('sort-by').value;
+  const minRating = parseFloat(document.getElementById('min-rating').value) || 0;
+  const maxPriceRaw = document.getElementById('max-price').value;
+  const maxPrice = maxPriceRaw !== '' ? parseFloat(maxPriceRaw) : null;
+
+  const byDest = {};
+  for (const h of allHotels) {
+    (byDest[h.destination] ??= []).push(h);
+  }
+
+  const totalWithComparison = allHotels.filter(hasComparison).length;
+  subtitle.textContent = totalWithComparison
+    ? `${allHotels.length} hotels across ${Object.keys(byDest).length} destinations · ${totalWithComparison} with a live rate comparison`
+    : `${allHotels.length} hotels across ${Object.keys(byDest).length} destinations`;
+
+  root.innerHTML = '';
+  for (const dest of Object.keys(byDest).sort()) {
+    let destHotels = byDest[dest];
+    if (onlyComparisons) destHotels = destHotels.filter(hasComparison);
+    if (minRating > 0) destHotels = destHotels.filter(h => (h.star_rating ?? 0) >= minRating);
+    if (maxPrice != null && !Number.isNaN(maxPrice)) {
+      destHotels = destHotels.filter(h => {
+        const price = parseCost(h.base_cost);
+        return price != null && price <= maxPrice;
+      });
+    }
+    if (!destHotels.length) continue;
+    destHotels = sortHotels(destHotels, sortBy);
+
+    const section = document.createElement('section');
+    section.className = 'destination-section';
+
+    const title = document.createElement('h2');
+    title.className = 'destination-title';
+    title.textContent = destHotels.length === byDest[dest].length
+      ? `${dest} (${byDest[dest].length})`
+      : `${dest} (${destHotels.length} of ${byDest[dest].length})`;
+    section.appendChild(title);
+
+    for (const hotel of destHotels) {
+      section.appendChild(renderHotel(hotel));
+    }
+    root.appendChild(section);
+  }
+
+  if (!root.children.length) {
+    root.innerHTML = '<p class="error">No hotels match the current filters.</p>';
+  }
+}
+
 function renderHotel(hotel) {
   const details = document.createElement('details');
   details.className = 'hotel';
+
+  const chainRates = ratesByHotelKey[hotelKey(hotel.destination, hotel.name)] || [];
+  const swCost = parseCost(hotel.base_cost);
 
   const summary = document.createElement('summary');
   const name = document.createElement('span');
@@ -156,7 +588,10 @@ function renderHotel(hotel) {
   meta.className = 'hotel-meta';
   const star = hotel.star_rating ? `★ ${hotel.star_rating}` : '';
   const cost = hotel.base_cost || '';
-  meta.textContent = [star, cost].filter(Boolean).join('  ·  ');
+  const chainBadges = chainRates
+    .map(r => `${r.chain.toUpperCase()} ${r.listing_price != null ? '$' + fmtMoney(r.listing_price) : '—'}${formatDeltaText(r.listing_price, swCost)}`)
+    .join(', ');
+  meta.textContent = [star, cost, chainBadges].filter(Boolean).join('  ·  ');
   summary.appendChild(name);
   summary.appendChild(meta);
   details.appendChild(summary);
@@ -170,16 +605,7 @@ function renderHotel(hotel) {
   const roomImages = [...new Set((hotel.room_types || []).flatMap(rt => rt.images || []))].filter(Boolean);
   const images = hotelImages.length ? hotelImages : roomImages;
   if (images.length) {
-    const carousel = document.createElement('div');
-    carousel.className = 'carousel';
-    for (const src of images) {
-      const img = document.createElement('img');
-      img.src = src;
-      img.loading = 'lazy';
-      img.alt = hotel.name;
-      carousel.appendChild(img);
-    }
-    body.appendChild(carousel);
+    body.appendChild(buildSlideshow(images, hotel.name));
   } else {
     const empty = document.createElement('div');
     empty.className = 'carousel empty';
@@ -204,6 +630,117 @@ function renderHotel(hotel) {
       amenities.appendChild(pill);
     }
     body.appendChild(amenities);
+  }
+
+  if (chainRates.length) {
+    const chainSection = document.createElement('div');
+    chainSection.className = 'chain-rates';
+    const flightTotal = flightTotalFor(hotel.destination);
+    for (const rate of chainRates) {
+      const chainLabel = rate.chain.toUpperCase();
+      const asOf = document.createElement('p');
+      asOf.className = 'chain-rate-line';
+      asOf.textContent = `${chainLabel} rate as of ${rate.scraped_at}`;
+      chainSection.appendChild(asOf);
+
+      // Plainly stated, labeled rows right before the room rates — which
+      // number is Southwest's and which is the hotel's own price should be
+      // obvious at a glance, not something to infer from a delta. The
+      // cheapest row is bolded/colored so the difference reads immediately
+      // rather than requiring the reader to do the subtraction themselves.
+      if (rate.listing_price != null && swCost != null) {
+        const stated = document.createElement('div');
+        stated.className = 'price-stated';
+
+        const directTotal = flightTotal != null ? rate.listing_price + flightTotal : null;
+        const cheapestValue = directTotal != null ? Math.min(swCost, directTotal, rate.listing_price) : Math.min(swCost, rate.listing_price);
+
+        const swRow = document.createElement('p');
+        swRow.className = 'price-row' + (swCost === cheapestValue ? ' winner' : '');
+        swRow.innerHTML = `<span class="price-tag">Southwest package:</span> <span class="price-value">$${fmtMoney(swCost)}</span>`;
+        stated.appendChild(swRow);
+
+        const chainRow = document.createElement('p');
+        chainRow.className = 'price-row' + (rate.listing_price === cheapestValue ? ' winner' : '');
+        const chainNameHtml = rate.booking_url
+          ? `<a href="${rate.booking_url}" target="_blank" rel="noopener">${chainLabel}</a>`
+          : chainLabel;
+        chainRow.innerHTML = `<span class="price-tag">${chainNameHtml} hotel only:</span> <span class="price-value">$${fmtMoney(rate.listing_price)}</span>`;
+        stated.appendChild(chainRow);
+
+        if (directTotal != null) {
+          const directRow = document.createElement('p');
+          directRow.className = 'price-row' + (directTotal === cheapestValue ? ' winner' : '');
+          directRow.innerHTML = `<span class="price-tag">${chainNameHtml} + flight:</span> <span class="price-value">$${fmtMoney(directTotal)}</span>`;
+          stated.appendChild(directRow);
+        } else {
+          const note = document.createElement('p');
+          note.className = 'flight-note';
+          note.textContent = `No flight price entered yet for ${hotel.destination} — run flight_price_entry.py to add one and include it here.`;
+          stated.appendChild(note);
+        }
+
+        // The clearest single takeaway: how much cheaper (or pricier)
+        // booking direct is, compared against whichever direct figure is
+        // most apples-to-apples (hotel+flight when known, hotel-only
+        // otherwise since that's still what's being compared above).
+        const compareAgainst = directTotal != null ? directTotal : rate.listing_price;
+        const delta = computeDelta(compareAgainst, swCost);
+        if (delta != null && Math.abs(delta) >= 0.5) {
+          const deltaLine = document.createElement('p');
+          deltaLine.className = 'price-delta-line ' + (delta > 0 ? 'cheaper' : 'pricier');
+          const abs = Math.abs(delta).toLocaleString(undefined, { maximumFractionDigits: 0 });
+          deltaLine.textContent = delta > 0 ? `$${abs} cheaper booking direct` : `$${abs} more booking direct`;
+          stated.appendChild(deltaLine);
+        }
+
+        chainSection.appendChild(stated);
+      }
+
+      if (rate.rooms && rate.rooms.length) {
+        const roomsDetails = document.createElement('details');
+        roomsDetails.className = 'chain-rooms';
+        const roomsSummary = document.createElement('summary');
+        roomsSummary.textContent = `${rate.rooms.length} room option${rate.rooms.length === 1 ? '' : 's'}`;
+        roomsDetails.appendChild(roomsSummary);
+
+        for (const room of rate.rooms) {
+          const roomEl = document.createElement('div');
+          roomEl.className = 'chain-room';
+          const title = document.createElement('p');
+          title.className = 'chain-room-title';
+          title.textContent = room.name + (room.size_sq_m ? ` · ${room.size_sq_m} sq m` : '');
+          roomEl.appendChild(title);
+
+          if (room.images && room.images.length) {
+            const imgStrip = document.createElement('div');
+            imgStrip.className = 'chain-room-images';
+            room.images.forEach((src, i) => {
+              const img = document.createElement('img');
+              img.src = src;
+              img.loading = 'lazy';
+              img.alt = room.name;
+              img.addEventListener('click', () => openLightbox(room.images, i, room.name));
+              imgStrip.appendChild(img);
+            });
+            roomEl.appendChild(imgStrip);
+          }
+
+          for (const opt of room.rate_options || []) {
+            const optLine = document.createElement('p');
+            optLine.className = 'rate-option';
+            const was = opt.original_price ? ` (was $${fmtMoney(opt.original_price)})` : '';
+            const perNight = opt.price_per_night ? ` — $${fmtMoney(opt.price_per_night)}/night` : '';
+            const pills = (opt.pills && opt.pills.length) ? ` · ${opt.pills.join(', ')}` : '';
+            optLine.textContent = `$${opt.price != null ? fmtMoney(opt.price) : '—'}${was}${perNight}${pills}`;
+            roomEl.appendChild(optLine);
+          }
+          roomsDetails.appendChild(roomEl);
+        }
+        chainSection.appendChild(roomsDetails);
+      }
+    }
+    body.appendChild(chainSection);
   }
 
   details.appendChild(body);
